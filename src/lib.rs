@@ -33,16 +33,16 @@ mod access_control {
                 Runtime::allocate_component_address(AccessControl::blueprint_id());
 
             // Create an Owner Badge
-            let owner_badge = ResourceBuilder::new_fungible(OwnerRole::None)
+            let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
-                        "name" => "Access Control Owner Badge", locked;
+                        "name" => "Access Control Admin Badge", locked;
                     }
                 ))
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
-                info!("HERE IS THE ADDRESS YOU HAVE BEEN LOOKING FOR: {:?}", owner_badge.resource_address());
+                info!("HERE IS THE ADDRESS YOU HAVE BEEN LOOKING FOR: {:?}", admin_badge.resource_address());
 
             // Create a new Badge resource manager
             let badge_resource_manager = ResourceBuilder::new_integer_non_fungible::<Badge>(OwnerRole::None)
@@ -52,15 +52,15 @@ mod access_control {
                     }
                 ))
                 .mint_roles(mint_roles! {
-                    minter => rule!(require(owner_badge.resource_address()));
+                    minter => rule!(require(admin_badge.resource_address()));
                     minter_updater => rule!(deny_all);
                 })
                 .recall_roles(recall_roles! {
-                    recaller => rule!(require(owner_badge.resource_address()));
+                    recaller => rule!(require(admin_badge.resource_address()));
                     recaller_updater => rule!(deny_all);
                 })
                 .burn_roles(burn_roles! {
-                    burner => rule!(require(owner_badge.resource_address()));
+                    burner => rule!(require(admin_badge.resource_address())); 
                     burner_updater => rule!(deny_all);
                 })
                 .create_with_no_initial_supply();
@@ -72,17 +72,17 @@ mod access_control {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
-                owner_badge.resource_address()
+                admin_badge.resource_address()
             ))))
             .roles(roles!(
-                admin => rule!(require(owner_badge.resource_address()));
+                admin => rule!(require(admin_badge.resource_address()));
                 manager => rule!(require(badge_resource_manager.address()));
             ))
             .with_address(address_reservation)
             .globalize();
 
             // Return the component and the owner badge
-            (component, owner_badge)
+            (component, admin_badge)
         }
 
         pub fn mint_badge(&mut self, id: u64, holder: ComponentAddress) -> NonFungibleBucket {
